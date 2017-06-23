@@ -27,10 +27,10 @@ public class TikvClient {
 
     public void set(String key, byte[] value) {
         Pair<RegionStoreClient, Kvrpcpb.Context> pair = checkAndGetClient(key);
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         pair.first.rawPut(ByteString.copyFrom(key.getBytes()), ByteString.copyFrom(value),pair.second);
-        long end = System.currentTimeMillis();
-        System.out.println("rawput:"+(end-start));
+        long end = System.nanoTime();
+        System.out.println("rawput:" + (end - start) / 1000000.0 + "ms");
     }
 
     public byte[] get(String key) {

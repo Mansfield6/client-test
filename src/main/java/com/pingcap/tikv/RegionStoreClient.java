@@ -16,7 +16,8 @@
 package com.pingcap.tikv;
 
 
-import com.google.common.collect.Iterables;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.net.HostAndPort;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -35,6 +36,7 @@ import com.pingcap.tikv.grpc.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvStub;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.util.FutureObserver;
+import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -248,23 +250,33 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         channel.shutdown();
     }
 
+    public static final int MAX_CACHE_CAPACITY = 64;
+    private static final Cache<String, ManagedChannel> connPool = CacheBuilder.newBuilder().build();
+
     public static RegionStoreClient create(Region region, Store store, TiSession session) {
         RegionStoreClient client = null;
+        String addressStr = store.getAddress();
         try {
-            HostAndPort address = HostAndPort.fromString(store.getAddress());
-            ManagedChannel channel = ManagedChannelBuilder
-                    .forAddress(address.getHostText(), address.getPort())
-                    .usePlaintext(true)
-                    .build();
+            ManagedChannel channel;
+            channel = connPool.getIfPresent(addressStr);
+            if (channel == null ||
+                channel.getState(false).equals(ConnectivityState.SHUTDOWN)) {
+                HostAndPort address = HostAndPort.fromString(addressStr);
+                channel = ManagedChannelBuilder
+                        .forAddress(address.getHostText(), address.getPort())
+                        .usePlaintext(true)
+                        .build();
+                connPool.put(addressStr, channel);
+            }
             TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);
             TikvStub asyncStub = TikvGrpc.newStub(channel);
             client = new RegionStoreClient(region, session, channel, blockingStub, asyncStub);
         } catch (Exception e) {
             if (client != null) {
                 try {
+                    connPool.invalidate(addressStr);
                     client.close();
-                } catch (Exception ignore) {
-                }
+                } catch (Exception ignore) {}
             }
             throw e;
         }
