@@ -36,7 +36,6 @@ import com.pingcap.tikv.grpc.TikvGrpc.TikvBlockingStub;
 import com.pingcap.tikv.grpc.TikvGrpc.TikvStub;
 import com.pingcap.tikv.meta.TiRange;
 import com.pingcap.tikv.util.FutureObserver;
-import io.grpc.ConnectivityState;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -251,7 +250,10 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
     }
 
     public static final int MAX_CACHE_CAPACITY = 64;
-    private static final Cache<String, ManagedChannel> connPool = CacheBuilder.newBuilder().build();
+    private static final Cache<String, ManagedChannel> connPool = CacheBuilder
+            .newBuilder()
+            .maximumSize(MAX_CACHE_CAPACITY)
+            .build();
 
     public static RegionStoreClient create(Region region, Store store, TiSession session) {
         RegionStoreClient client = null;
@@ -259,8 +261,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
         try {
             ManagedChannel channel;
             channel = connPool.getIfPresent(addressStr);
-            if (channel == null ||
-                channel.getState(false).equals(ConnectivityState.SHUTDOWN)) {
+            if (channel == null || channel.isShutdown()) {
                 HostAndPort address = HostAndPort.fromString(addressStr);
                 channel = ManagedChannelBuilder
                         .forAddress(address.getHostText(), address.getPort())
