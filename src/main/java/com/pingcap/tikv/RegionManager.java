@@ -174,6 +174,11 @@ public class RegionManager {
         if (startKey.size() == 0 &&  endKey.size() == 0) {
             return Range.all();
         }
+        if (startKey.size() == 0) {
+            return Range.lessThan(endKey.asReadOnlyByteBuffer());
+        } else if (endKey.size() == 0) {
+            return Range.atLeast(startKey.asReadOnlyByteBuffer());
+        }
         return Range.closedOpen(startKey.asReadOnlyByteBuffer(),
                                 endKey.asReadOnlyByteBuffer());
     }
