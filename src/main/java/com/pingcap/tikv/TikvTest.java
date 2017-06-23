@@ -14,6 +14,6 @@ public class TikvTest {
             System.out.println("----------------complete:"+i+" time:"+(iend-istart));
         }
         long end = System.currentTimeMillis();
-        System.out.println((end-start)/1000+"s");
+        System.out.println((end-start)/1000.0+"s");
     }
 }
