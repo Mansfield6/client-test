@@ -16,7 +16,7 @@ public class TikvClient {
 
     RegionManager regionManager;
     TiSession session;
-    HashMap<String, RegionStoreClient> clients =  new HashMap<String, RegionStoreClient>();
+//    HashMap<String, RegionStoreClient> clients =  new HashMap<String, RegionStoreClient>();
 
     public TikvClient(String host) {
         TiConfiguration conf = TiConfiguration.createDefault(ImmutableList.of(host));
@@ -27,10 +27,7 @@ public class TikvClient {
 
     public void set(String key, byte[] value) {
         Pair<RegionStoreClient, Kvrpcpb.Context> pair = checkAndGetClient(key);
-        long start = System.nanoTime();
         pair.first.rawPut(ByteString.copyFrom(key.getBytes()), ByteString.copyFrom(value),pair.second);
-        long end = System.nanoTime();
-        System.out.println("rawput:" + (end - start) / 1000000.0 + "ms");
     }
 
     public byte[] get(String key) {
@@ -46,11 +43,9 @@ public class TikvClient {
 
 
     Pair<RegionStoreClient, Kvrpcpb.Context> checkAndGetClient(String key) {
-        long start = System.currentTimeMillis();
 
         Pair<Metapb.Region, Metapb.Store> pair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key.getBytes()));
 
-        System.out.println("create client");
         RegionStoreClient storeClient = RegionStoreClient.create(pair.first, pair.second, session);
 
         Metapb.Region region = pair.first;
@@ -59,11 +54,13 @@ public class TikvClient {
                 .setRegionEpoch(region.getRegionEpoch())
                 .setPeer(region.getPeers(0))
                 .build();
-        long end = System.currentTimeMillis();
-        System.out.println("get client:"+(end -start));
 
         return Pair.create(storeClient, context);
 
     }
 
+
+    public void close(){
+
+    }
 }

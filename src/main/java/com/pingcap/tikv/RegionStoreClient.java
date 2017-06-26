@@ -267,6 +267,7 @@ public class RegionStoreClient extends AbstractGrpcClient<TikvBlockingStub, Tikv
                         .forAddress(address.getHostText(), address.getPort())
                         .usePlaintext(true)
                         .build();
+                System.out.println("-----------------------"+channel.toString());
                 connPool.put(addressStr, channel);
             }
             TikvBlockingStub blockingStub = TikvGrpc.newBlockingStub(channel);

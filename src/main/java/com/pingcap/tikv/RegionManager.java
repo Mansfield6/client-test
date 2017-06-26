@@ -73,7 +73,6 @@ public class RegionManager {
     }
 
     public Region getRegionByKey(ByteString key) {
-        long start = System.currentTimeMillis();
         Long regionId;
         lock.readLock().lock();
         try {
@@ -84,14 +83,12 @@ public class RegionManager {
 
         if (regionId == null) {
             Region region = pdClient.getRegionByKey(key);
-            System.out.println("startkey:"+region.getStartKey().toStringUtf8()+" endkey:"+region.getEndKey().toStringUtf8());
+//            System.out.println("startkey:"+region.getStartKey().toStringUtf8()+" endkey:"+region.getEndKey().toStringUtf8());
             if (!putRegion(region)) {
                 throw new TiClientInternalException("Invalid Region: " + region.toString());
             }
             return region;
         }
-        long end = System.currentTimeMillis();
-        System.out.println("cache get:"+(end-start));
         return getRegionById(regionId);
     }
 
@@ -114,19 +111,13 @@ public class RegionManager {
     }
 
     public Pair<Region, Store> getRegionStorePairByKey(ByteString key) {
-        long rstart = System.currentTimeMillis();
         Region region = getRegionByKey(key);
-        long rend = System.currentTimeMillis();
-        System.out.println("get region:"+(rend - rstart));
         if (!ifValidRegion(region)) {
             throw new TiClientInternalException("Region invalid: " + region.toString());
         }
         Peer leader = region.getPeers(0);
         long storeId = leader.getStoreId();
-        long sstart = System.currentTimeMillis();
         Store store =  getStoreById(storeId);
-        long ssend = System.currentTimeMillis();
-        System.out.println("get store:"+(ssend - sstart));
         return Pair.create(region, store);
     }
 
