@@ -73,7 +73,7 @@ public class RegionManager {
     }
 
     public Region getRegionByKey(ByteString key) {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         Long regionId;
         lock.readLock().lock();
         try {
@@ -90,8 +90,8 @@ public class RegionManager {
             }
             return region;
         }
-        long end = System.currentTimeMillis();
-        System.out.println("cache get:"+(end-start));
+        long end = System.nanoTime();
+        System.out.println("cache get:"+(end-start) / 1000000.0 + "ms");
         return getRegionById(regionId);
     }
 
@@ -114,19 +114,19 @@ public class RegionManager {
     }
 
     public Pair<Region, Store> getRegionStorePairByKey(ByteString key) {
-        long rstart = System.currentTimeMillis();
+        long rstart = System.nanoTime();
         Region region = getRegionByKey(key);
-        long rend = System.currentTimeMillis();
-        System.out.println("get region:"+(rend - rstart));
+        long rend = System.nanoTime();
+        System.out.println("get region:"+(rend - rstart) / 1000000.0 + "ms");
         if (!ifValidRegion(region)) {
             throw new TiClientInternalException("Region invalid: " + region.toString());
         }
         Peer leader = region.getPeers(0);
         long storeId = leader.getStoreId();
-        long sstart = System.currentTimeMillis();
+        long sstart = System.nanoTime();
         Store store =  getStoreById(storeId);
-        long ssend = System.currentTimeMillis();
-        System.out.println("get store:"+(ssend - sstart));
+        long ssend = System.nanoTime();
+        System.out.println("get store:"+(ssend - sstart) / 1000000.0 + "ms");
         return Pair.create(region, store);
     }
 

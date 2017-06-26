@@ -46,7 +46,7 @@ public class TikvClient {
 
 
     Pair<RegionStoreClient, Kvrpcpb.Context> checkAndGetClient(String key) {
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
 
         Pair<Metapb.Region, Metapb.Store> pair = regionManager.getRegionStorePairByKey(ByteString.copyFrom(key.getBytes()));
 
@@ -59,8 +59,8 @@ public class TikvClient {
                 .setRegionEpoch(region.getRegionEpoch())
                 .setPeer(region.getPeers(0))
                 .build();
-        long end = System.currentTimeMillis();
-        System.out.println("get client:"+(end -start));
+        long end = System.nanoTime();
+        System.out.println("get client:"+(end -start) / 1000000.0 + "ms");
 
         return Pair.create(storeClient, context);
 
